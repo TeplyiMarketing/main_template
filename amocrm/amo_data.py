@@ -10,7 +10,7 @@ def amo_to_database(engine, merged_table):
     logger.info('Выгрузка с заменой. File amo_to_db.')
 
 
-def get_leads(link_leads, data_headers, columns_leads=None):
+def get_leads(link_leads, data_headers, column_leads=None):
     s = requests.Session()
     df = pd.DataFrame()
     pages_limit = 1
@@ -59,15 +59,17 @@ def get_leads(link_leads, data_headers, columns_leads=None):
     except Exception as error:
         logger.warning(f'Возникли проблемы с custom_fields_values - {error}')
 
-    if columns_leads:
-        for i in columns_leads:
+    if column_leads:
+        columns_to_drop = [col for col in df.columns if col not in column_leads]
+        for i in columns_to_drop:
             try:
                 df = df.drop(columns=i, axis=1)
-                logger.info(f'Drop column {i} finish with status - good! File leads.')
+                logger.info(f'Удаление столбца {i} завершено успешно! Файл leads.')
             except KeyError:
-                logger.warning('Key not found - pass. File leads.')
+                logger.warning('Ключ не найден - пропускаем. Файл leads.')
     else:
-        logger.warning('Отсутствует columns_leads. File leads.')
+        logger.warning('Отсутствует columns_leads. Файл leads.')
+
     try:
         df['created_at'] = pd.to_datetime(df['created_at'], unit='s')
         df['created_at'] = df['created_at'].dt.date
@@ -78,7 +80,7 @@ def get_leads(link_leads, data_headers, columns_leads=None):
     return df
 
 
-def get_events(link_events, data_headers, replace_dict_events, columns_events=None):
+def get_events(link_events, data_headers, replace_dict_events, column_events=None):
     s = requests.Session()
     df_events = pd.DataFrame()
     pages_limit = 1
@@ -110,16 +112,17 @@ def get_events(link_events, data_headers, replace_dict_events, columns_events=No
         logger.warning(f'Events were not received - KeyError')
     except Exception as error:
         logger.error(f'Произошла непредвиденная ошибка - {error}')
-    try:
-        for i in columns_events:
+    if column_events:
+        columns_to_drop_events = [col for col in df_events.columns if col not in column_events]
+        for i in columns_to_drop_events:
             try:
                 df_events = df_events.drop(
                     columns=i, axis=1)
                 logger.info(f'Drop column {i} finish with status - good! File events.')
             except KeyError:
                 logger.warning('Key not found - pass. File events.')
-    except Exception as error:
-        logger.warning(f'Возникло исключений - {error}')
+            except Exception as error:
+                logger.warning(f'Возникло исключение - {error}')
     try:
         df_events = df_events.rename(columns={'entity_id': 'id', 'created_at': 'date_event', 'value_after.id': 'stage'})
         df_events['stage'] = df_events['stage'].replace(replace_dict_events)
