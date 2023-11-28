@@ -65,7 +65,7 @@ class Config:
         self.link_postgres = f'postgresql://{config.db.user_db}:{config.db.password_db}@{config.db.address_db}:{config.db.port_db}/{config.db.name_db}'
         self.engine = create_engine(self.link_postgres)
         # Yandex
-        self.reports_url = config.reports.token_type
+        self.reports_url = config.reports.reports_url
         self.token_type = config.reports.token_type
         self.tokens_yandex = config.yandex.tokens_yandex
         self.logins_yandex = config.yandex.logins_yandex
