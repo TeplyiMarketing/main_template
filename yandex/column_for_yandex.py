@@ -15,11 +15,13 @@ body = {"params": {"SelectionCriteria": {"DateFrom": config.last_date_yandex, "D
 
 body = json.dumps(body, indent=4)
 
-headers = {'Authorization': f'{config.token_type} ' + config.token_yandex,
-           "Client-Login": config.login_yandex,
-           "Accept-Language": "ru",
-           "processingMode": "auto",
-           "returnMoneyInMicros": "false",
-           "skipReportHeader": "true",
-           "skipReportSummary": "true",
-           }
+def create_headers(token, login):
+    return {
+        'Authorization': f'{config.token_type} ' + token,
+        "Client-Login": login,
+        "Accept-Language": "ru",
+        "processingMode": "auto",
+        "returnMoneyInMicros": "false",
+        "skipReportHeader": "true",
+        "skipReportSummary": "true",
+    }

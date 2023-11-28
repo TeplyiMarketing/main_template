@@ -3,7 +3,7 @@ from logs.logging import logger
 from amocrm.amo_data import get_leads, merge_tables, get_events
 from amocrm.columns import replace_dict_events, column_events, column_leads
 from data.config_vars import Config
-from yandex.column_for_yandex import body, headers
+from yandex.column_for_yandex import body, create_headers
 from yandex.get_yandex import yandex
 
 config = Config()
@@ -20,7 +20,11 @@ def run():
         # Обработка ситуации, если один из DataFrame равен None
         logger.warning("Ошибка при получении данных из API или чтении файлов.")
 
-    yandex(config.reports_url, body, headers)
+    tokens = config.tokens_yandex
+    logins = config.logins_yandex
+    for token, login in zip(tokens, logins):
+        headers = create_headers(token, login)
+        yandex(config.reports_url, body, headers)
 
 
 if __name__ == "__main__":

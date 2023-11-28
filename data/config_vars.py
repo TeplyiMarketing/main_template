@@ -33,13 +33,12 @@ class Config:
         # Yandex
         self.reports_url = None
         self.token_type = None
-        self.token_yandex = None
-        self.login_yandex = None
+        self.tokens_yandex = None
+        self.logins_yandex = None
         # YandexDatas
         self.goals_id = None
         self.columns_yandex = None
         # Others
-        self.reports_url = None
         self.timestamp_now = None
 
     def load_from_env(self, env_path):
@@ -68,10 +67,9 @@ class Config:
         # Yandex
         self.reports_url = config.reports.token_type
         self.token_type = config.reports.token_type
-        self.token_yandex = config.yandex.token_yandex
-        self.login_yandex = config.yandex.login_yandex
+        self.tokens_yandex = config.yandex.tokens_yandex
+        self.logins_yandex = config.yandex.logins_yandex
         # YandexDatas
         self.goals_id = config.yandex_datas.goals_id
         self.columns_yandex = config.yandex_datas.columns_yandex
-        # Others
-        self.reports_url = config.reports.reports_url
+

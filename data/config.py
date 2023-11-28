@@ -51,8 +51,8 @@ class YandexDates:
 
 @dataclass
 class YandexToken:
-    token_yandex: str
-    login_yandex: str
+    tokens_yandex: list
+    logins_yandex: list
 
 
 @dataclass
@@ -113,8 +113,8 @@ def load_config(path: str = None):
             last_date_yandex=env.str("LAST_DATE_YANDEX"),
         ),
         yandex=YandexToken(
-            token_yandex=env.str("TOKEN_YANDEX"),
-            login_yandex=env.str("LOGIN_YANDEX"),
+            tokens_yandex=env.list("TOKENS"),
+            logins_yandex=env.list("LOGINS"),
         ),
         yandex_datas=YandexDatas(
             goals_id=env.list('GOALS_ID'),
