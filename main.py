@@ -1,10 +1,12 @@
+import pandas as pd
+
 from logs.logging import logger
 
 from amocrm.amo_data import get_leads, merge_tables, get_events
 from amocrm.columns import replace_dict_events, column_events, column_leads
 from data.config_vars import Config
 from yandex.column_for_yandex import body, create_headers
-from yandex.get_yandex import yandex
+from yandex.get_yandex import yandex, yandex_to_database
 
 config = Config()
 config.load_from_env('.env')
@@ -20,11 +22,15 @@ def run():
         # Обработка ситуации, если один из DataFrame равен None
         logger.warning("Ошибка при получении данных из API или чтении файлов.")
 
+    # Yandex
     tokens = config.tokens_yandex
     logins = config.logins_yandex
+    df_yandex = pd.DataFrame()
     for token, login in zip(tokens, logins):
         headers = create_headers(token, login)
-        yandex(config.reports_url, body, headers)
+        df1 = yandex(config.reports_url, body, headers)
+        df_yandex = pd.concat([df_yandex, df1])
+    yandex_to_database(config.engine, df_yandex)
 
 
 if __name__ == "__main__":

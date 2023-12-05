@@ -31,10 +31,8 @@ def yandex(reports_url, body, headers):
                 logger.info(f"JSON-код ответа сервера: \n{request.json()}")
                 break
             elif request.status_code == 200:
-                df1 = pd.read_csv(io.StringIO(request.text), sep='\t', encoding='utf-8', low_memory=False)
-                yandex_to_database(config.engine, df1)
                 logger.info("Отчет создан успешно")
-                break
+                return pd.read_csv(io.StringIO(request.text), sep='\t', encoding='utf-8', low_memory=False)
             elif request.status_code == 201:
                 logger.info("Отчет успешно поставлен в очередь в режиме офлайн")
                 retry_in = int(20)
