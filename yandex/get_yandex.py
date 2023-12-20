@@ -39,12 +39,12 @@ def yandex(reports_url, body, headers):
                 return pd.read_csv(io.StringIO(request.text), sep='\t', encoding='utf-8', low_memory=False)
             elif request.status_code == 201:
                 logger.info("Отчет успешно поставлен в очередь в режиме офлайн")
-                retry_in = int(20)
+                retry_in = int(120)
                 logger.info(f"Повторная отправка запроса через {retry_in} секунд")
                 sleep(retry_in)
             elif request.status_code == 202:
                 logger.info("Отчет успешно поставлен в очередь в режиме офлайн")
-                retry_in = int(20)
+                retry_in = int(120)
                 logger.info(f"Повторная отправка запроса через {retry_in} секунд")
                 sleep(retry_in)
             elif request.status_code == 500:
