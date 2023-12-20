@@ -16,4 +16,5 @@ def update_dates_yandex():
     # Преобразовать дату в строку в нужном формате (YYYY-MM-DD)
     formatted_last = last_date_yandex.strftime('%Y-%m-%d')
     set_key('.env', 'NOW_DATE_YANDEX', str(formatted_last))
+    set_key('.env', 'LAST_DATE_YANDEX', str(last_date_yandex))
     logger.info(f'Update date Yandex - {formatted_last}')

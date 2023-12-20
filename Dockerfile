@@ -2,6 +2,7 @@ FROM python:3.11
 LABEL authors="SOneTrue"
 
 RUN python3 -m pip install --upgrade pip
+RUN apt-get update && apt-get install -y nano
 
 # Устанавливаем рабочую директорию внутри контейнера
 WORKDIR /your_client_name

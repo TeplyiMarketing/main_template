@@ -12,8 +12,12 @@ from data.config_vars import Config
 
 
 def yandex_to_database(engine, df1):
-    df1.to_sql(name='yandex', con=engine, if_exists='replace', index=False)
-    logger.info("Выгрузка yandex прошла с заменой. File yandex_to_db.")
+    try:
+        df1.to_sql(name='yandex', con=engine, if_exists='append', index=False)
+        logger.info("Выгрузка yandex прошла с добавлением. File yandex_to_db.")
+    except:
+        df1.to_sql(name='yandex', con=engine, if_exists='replace', index=False)
+        logger.info("Выгрузка yandex прошла с заменой. File yandex_to_db.")
 
 
 # --- Запуск цикла для выполнения запросов ---
