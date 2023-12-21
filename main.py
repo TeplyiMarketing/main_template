@@ -30,7 +30,12 @@ def run():
         headers = create_headers(token, login)
         df1 = yandex(config.reports_url, body, headers)
         df_yandex = pd.concat([df_yandex, df1])
-    yandex_to_database(config.engine, df_yandex)
+    try:
+        df_yandex = df_yandex[df_yandex['Cost'] != 0]
+        yandex_to_database(config.engine, df_yandex)
+    except Exception as warning:
+        logger.warning(f'Строки колонки Cost не были удалены. Код предупреждения - {warning}. Выгрузка не удалась!')
+
 
 
 if __name__ == "__main__":
