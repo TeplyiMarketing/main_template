@@ -4,23 +4,32 @@ from environs import Env
 
 
 @dataclass
-class GetToken:
+class AmoData:
+    subdomain: str
     client_id: str
     client_secret: str
     redirect_uri: str
-
-
-@dataclass
-class AuthCRM:
-    bearer: str
     access_token: str
     refresh_token: str
 
 
 @dataclass
-class AmoDates:
-    now_date_amo: str
-    last_date_amo: str
+class YandexData:
+    tokens: list
+    logins: list
+    reports_url: str
+    goals_id: list
+    columns: list
+
+
+@dataclass
+class Dates:
+    finish_amo_leads: str
+    start_amo_leads: str
+    finish_amo_events: str
+    start_amo_events: str
+    finish_yandex_date: str
+    start_yandex_date: str
 
 
 @dataclass
@@ -32,92 +41,51 @@ class DbConfig:
     name_db: str
 
 
-@dataclass
-class Others:
-    subdomain: str
-
-
-@dataclass
-class Reports:
-    reports_url: str
-    token_type: str
-
-
-@dataclass
-class YandexDates:
-    now_date_yandex: str
-    last_date_yandex: str
-
-
-@dataclass
-class YandexToken:
-    tokens_yandex: list
-    logins_yandex: list
-
-
-@dataclass
-class YandexDatas:
-    goals_id: list
-    columns_yandex: list
-
-
-@dataclass
-class Config:
-    gettoken: GetToken
-    auth_crm: AuthCRM
-    amo_dates: AmoDates
-    db: DbConfig
-    others: Others
-    reports: Reports
-    yandex_dates: YandexDates
-    yandex: YandexToken
-    yandex_datas: YandexDatas
-
-
 def load_config(path: str = None):
-    # Загрузить данные конфигурации из файла .env
+    # Загрузить данные конфигурации из файла .env.dist2
     env = Env()
     env.read_env(path)
 
-    return Config(
-        gettoken=GetToken(
+    return {
+        'amocrm': AmoData(
+            subdomain=env.str("SUBDOMAIN"),
             client_id=env.str("CLIENT_ID"),
             client_secret=env.str("CLIENT_SECRET"),
-            redirect_uri=env.str("REDIRECT_URI")
-        ),
-        auth_crm=AuthCRM(
-            bearer=env.str("TOKEN_TYPE"),
-            access_token=env.str("ACCESS_TOKEN"),
+            redirect_uri=env.str("REDIRECT_URI"),
             refresh_token=env.str("REFRESH_TOKEN"),
+            access_token=env.str("ACCESS_TOKEN"),
         ),
-        amo_dates=AmoDates(
-            now_date_amo=env.str("NOW_DATE_AMO"),
-            last_date_amo=env.str("LAST_DATE_AMO"),
+        'yandex': YandexData(
+            reports_url=env.str("REPORTS_URL"),
+            tokens=env.list("TOKENS"),
+            logins=env.list("LOGINS"),
+            goals_id=env.list('GOALS_ID'),
+            columns=env.list('COLUMNS'),
         ),
-        db=DbConfig(
+        'dates': Dates(
+            finish_amo_leads=env.str("FINISH_AMO_LEADS"),
+            start_amo_leads=env.str("START_AMO_LEADS"),
+            finish_amo_events=env.str("FINISH_AMO_EVENTS"),
+            start_amo_events=env.str("START_AMO_EVENTS"),
+            finish_yandex_date=env.str("FINISH_YANDEX_DATE"),
+            start_yandex_date=env.str("START_YANDEX_DATE"),
+        ),
+        'db': DbConfig(
             user_db=env.str('USER_DB'),
             password_db=env.str('PASSWORD_DB'),
             address_db=env.str('ADDRESS_DB'),
             port_db=env.str('PORT_DB'),
             name_db=env.str('NAME_DB')
         ),
-        others=Others(
-            subdomain=env.str("SUBDOMAIN"),
-        ),
-        reports=Reports(
-            reports_url=env.str("REPORTS_URL"),
-            token_type=env.str("TOKEN_TYPE"),
-        ),
-        yandex_dates=YandexDates(
-            now_date_yandex=env.str("NOW_DATE_YANDEX"),
-            last_date_yandex=env.str("LAST_DATE_YANDEX"),
-        ),
-        yandex=YandexToken(
-            tokens_yandex=env.list("TOKENS"),
-            logins_yandex=env.list("LOGINS"),
-        ),
-        yandex_datas=YandexDatas(
-            goals_id=env.list('GOALS_ID'),
-            columns_yandex=env.list('COLUMNS_YANDEX'),
-        )
-    )
+    }
+
+
+class Config:
+    def __init__(self):
+        self.config_data = None
+
+    def load_from_env(self, env_path):
+        self.config_data = load_config(env_path)
+
+    def get(self, key, default=None):
+        return self.config_data.get(key, default)

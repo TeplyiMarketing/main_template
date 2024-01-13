@@ -27,7 +27,7 @@ def yandex(reports_url, body, headers):
     while True:
         try:
             config = Config()
-            config.load_from_env('.env')
+            config.load_from_env('.env.dist2')
             request = requests.post(reports_url, body, headers=headers)
             if request.status_code == 400:
                 logger.info("Параметры запроса указаны неверно или достигнут лимит отчетов в очереди")
