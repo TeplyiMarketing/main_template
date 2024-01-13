@@ -19,8 +19,6 @@ def get_leads(link_leads, data_headers, column_leads=None):
             for i in range(pages_limit, 1000000):
                 pages_limit += 1
                 pages = {'page': i}
-                logger.info(f'{pages["page"]}, leads')
-
                 leads = s.get(link_leads, headers=data_headers, params=pages)
                 url_leads = leads.json()['_embedded']['leads']
                 df_leads = pd.DataFrame(url_leads)
@@ -34,6 +32,7 @@ def get_leads(link_leads, data_headers, column_leads=None):
         except Exception as error:
             logger.error(f'Возникла ошибка - {error}')
             pass
+        logger.info(f'{pages_limit} - выполнено кругов цикла в leads')
 
     # определить функцию для раскрытия столбца custom_fields_values
     def expand_custom_fields(row):
@@ -89,10 +88,7 @@ def get_events(link_events, data_headers, replace_dict_events, column_events=Non
             for i in range(pages_limit, 1000000):
                 pages_limit += 1
                 pages = {'page': i}
-                logger.info(f'{pages["page"]}, events')
-
                 events = s.get(link_events, headers=data_headers, params=pages)
-
                 url_events = events.json()['_embedded']['events']
                 df_events = pd.concat([df_events, pd.DataFrame(url_events)], axis=0, ignore_index=True)
                 df_events['value_after.id'] = df_events['value_after'].apply(lambda x: x[0]['lead_status']['id'])
@@ -105,6 +101,7 @@ def get_events(link_events, data_headers, replace_dict_events, column_events=Non
         except Exception as error:
             logger.error(f'Возникла ошибка - {error}')
             continue
+        logger.info(f'{pages_limit} - выполнено кругов цикла в events')
     try:
         df_events['created_at'] = pd.to_datetime(df_events['created_at'], unit='s')
         df_events['created_at'] = df_events['created_at'].dt.date
