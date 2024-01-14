@@ -16,7 +16,7 @@ def get_access_token(subdomain, client_id, client_secret, redirect_uri, refresh_
             set_key('.env', 'REFRESH_TOKEN', refresh_code)
             logger.info(response.status_code)
         except KeyError:
-            logger.warning('Key not found - pass. File auth.')
+            logger.warning(f'Ключ не найден - пропускаем. Функция Auth.')
     else:
         logger.info(response.status_code)
         logger.info(response.json())
@@ -35,7 +35,7 @@ def auth(subdomain, client_id, client_secret, redirect_uri, refresh_token):
             set_key('.env', 'REFRESH_TOKEN', refresh)
             logger.info(response.status_code)
         except KeyError:
-            logger.warning('Key not found - pass. File auth.')
+            logger.warning(f'Ключ не найден - пропускаем. Функция Auth.')
     else:
         logger.info(response.status_code)
         logger.info(response.json())

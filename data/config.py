@@ -11,6 +11,10 @@ class AmoData:
     redirect_uri: str
     access_token: str
     refresh_token: str
+    finish_amo_leads: str
+    start_amo_leads: str
+    finish_amo_events: str
+    start_amo_events: str
 
 
 @dataclass
@@ -20,14 +24,6 @@ class YandexData:
     reports_url: str
     goals_id: list
     columns: list
-
-
-@dataclass
-class Dates:
-    finish_amo_leads: str
-    start_amo_leads: str
-    finish_amo_events: str
-    start_amo_events: str
     finish_yandex_date: str
     start_yandex_date: str
 
@@ -54,6 +50,10 @@ def load_config(path: str = None):
             redirect_uri=env.str("REDIRECT_URI"),
             refresh_token=env.str("REFRESH_TOKEN"),
             access_token=env.str("ACCESS_TOKEN"),
+            finish_amo_leads=env.str("FINISH_AMO_LEADS"),
+            start_amo_leads=env.str("START_AMO_LEADS"),
+            finish_amo_events=env.str("FINISH_AMO_EVENTS"),
+            start_amo_events=env.str("START_AMO_EVENTS"),
         ),
         'yandex': YandexData(
             reports_url=env.str("REPORTS_URL"),
@@ -61,12 +61,6 @@ def load_config(path: str = None):
             logins=env.list("LOGINS"),
             goals_id=env.list('GOALS_ID'),
             columns=env.list('COLUMNS'),
-        ),
-        'dates': Dates(
-            finish_amo_leads=env.str("FINISH_AMO_LEADS"),
-            start_amo_leads=env.str("START_AMO_LEADS"),
-            finish_amo_events=env.str("FINISH_AMO_EVENTS"),
-            start_amo_events=env.str("START_AMO_EVENTS"),
             finish_yandex_date=env.str("FINISH_YANDEX_DATE"),
             start_yandex_date=env.str("START_YANDEX_DATE"),
         ),

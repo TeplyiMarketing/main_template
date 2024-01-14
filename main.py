@@ -30,6 +30,8 @@ engine = create_engine(link_postgres)
 
 
 def run():
+    # AmoCRM
+    logger.warning("Начался процесс выгрузки данных из AmoCRM системы!")
     df_leads = get_leads(link_leads, data_headers, column_leads)
     df_events = get_events(link_events, data_headers, replace_dict_events, column_events)
     if df_leads is not None and df_events is not None:
@@ -37,9 +39,10 @@ def run():
         logger.info("Объединение и загрузка данных прошла успешно!")
     else:
         # Обработка ситуации, если один из DataFrame равен None
-        logger.warning("Ошибка при получении данных из API или чтении файлов.")
+        logger.warning("Ошибка при получении данных из API или чтении файлов!")
 
     # Yandex
+    logger.warning("Начался процесс выгрузки данных из Yandex системы!")
     tokens = yandex_data.tokens
     logins = yandex_data.logins
     df_yandex = pd.DataFrame()
@@ -50,6 +53,7 @@ def run():
     try:
         df_yandex = df_yandex[df_yandex['Cost'] != 0]
         yandex_to_database(engine, df_yandex)
+        logger.info("Выгрузка данных Yandex прошла успешно!")
     except Exception as warning:
         logger.warning(f'Строки колонки Cost не были удалены. Код предупреждения - {warning}. Выгрузка не удалась!')
 

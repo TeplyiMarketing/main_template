@@ -8,12 +8,13 @@ config.load_from_env('.env')
 yandex_data = config.get('yandex')
 
 body = {
-    "params": {"SelectionCriteria": {"DateFrom": yandex_data.last_date_yandex, "DateTo": yandex_data.now_date_yandex},
-               "Goals": yandex_data.goals_id, "AttributionModels": ["LYDC"], "FieldNames": yandex_data.columns_yandex,
-               "ReportName": f"Отчет {random.randint(1, 10000)}",
-               "ReportType": "CRITERIA_PERFORMANCE_REPORT", "DateRangeType": "CUSTOM_DATE", "Format": "TSV",
-               "IncludeVAT": "YES", "IncludeDiscount": "NO"}
-    }
+    "params": {
+        "SelectionCriteria": {"DateFrom": yandex_data.start_yandex_date, "DateTo": yandex_data.finish_yandex_date},
+        "Goals": yandex_data.goals_id, "AttributionModels": ["LYDC"], "FieldNames": yandex_data.columns,
+        "ReportName": f"Отчет {random.randint(1, 10000)}",
+        "ReportType": "CRITERIA_PERFORMANCE_REPORT", "DateRangeType": "CUSTOM_DATE", "Format": "TSV",
+        "IncludeVAT": "YES", "IncludeDiscount": "NO"}
+}
 
 body = json.dumps(body, indent=4)
 
