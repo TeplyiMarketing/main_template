@@ -11,9 +11,9 @@ def get_access_token(subdomain, client_id, client_secret, redirect_uri, refresh_
     if response.status_code == 200:
         try:
             access_token = response.json()['access_token']
-            set_key('.env.dist2', 'ACCESS_TOKEN', access_token)
+            set_key('.env', 'ACCESS_TOKEN', access_token)
             refresh_code = response.json()['refresh_token']
-            set_key('.env.dist2', 'REFRESH_TOKEN', refresh_code)
+            set_key('.env', 'REFRESH_TOKEN', refresh_code)
             logger.info(response.status_code)
         except KeyError:
             logger.warning('Key not found - pass. File auth.')
@@ -30,9 +30,9 @@ def auth(subdomain, client_id, client_secret, redirect_uri, refresh_token):
     if response.status_code == 200:
         try:
             access_token = response.json()['access_token']
-            set_key('.env.dist2', 'ACCESS_TOKEN', access_token)
+            set_key('.env', 'ACCESS_TOKEN', access_token)
             refresh = response.json()['refresh_token']
-            set_key('.env.dist2', 'REFRESH_TOKEN', refresh)
+            set_key('.env', 'REFRESH_TOKEN', refresh)
             logger.info(response.status_code)
         except KeyError:
             logger.warning('Key not found - pass. File auth.')
