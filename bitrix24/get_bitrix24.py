@@ -14,11 +14,11 @@ def get_deals(bitrix24, engine, params, required_columns, replace_dict):
                     df_deals = df_deals.drop(columns=i, axis=1)
                     removed_columns.append(i)  # Добавление названия столбца в список
                 except KeyError:
-                    logger.warning('Ключ не найден - пропускаем.')
+                    logger.warning('Ключ не найден - пропускаем.Функция Bitrix24')
             if removed_columns:
                 logger.info(f'Удалены следующие столбцы: {", ".join(removed_columns)}. Функция Bitrix24.')
             else:
-                logger.info('Нет столбцов для удаления. Функция events.')
+                logger.info('Нет столбцов для удаления. Функция Bitrix24.')
         else:
             logger.warning('Отсутствует колонка.')
 
