@@ -3,17 +3,20 @@ from datetime import datetime
 
 from sqlalchemy import create_engine
 
+from bitrix24.get_bitrix24 import get_deals
+from data.replace_dicts import params_bitrix24, dict_bitrix24, dict_events
 from logs.logging import logger
+from fast_bitrix24 import Bitrix
 
 from amocrm.amo_data import get_leads, merge_tables, get_events
-from amocrm.columns import replace_dict_events, column_events, column_leads
 from data.config import Config
-from yandex.column_for_yandex import body, create_headers
+from yandex.params_yandex import body, create_headers
 from yandex.get_yandex import yandex, yandex_to_database
 
 config = Config()
 config.load_from_env('.env')
 amocrm_data = config.get('amocrm')
+bitrix24_data = config.get('bitrix24')
 yandex_data = config.get('yandex')
 db = config.get('db')
 start_amo_leads = datetime.strptime(amocrm_data.start_amo_leads, "%Y-%m-%d").timestamp()
@@ -32,14 +35,21 @@ engine = create_engine(link_postgres)
 def run():
     # AmoCRM
     logger.warning("Начался процесс выгрузки данных из AmoCRM системы!")
-    df_leads = get_leads(link_leads, data_headers, column_leads)
-    df_events = get_events(link_events, data_headers, replace_dict_events, column_events)
+    df_leads = get_leads(link_leads, data_headers, amocrm_data.columns_leads)
+    df_events = get_events(link_events, data_headers, dict_events, amocrm_data.columns_events)
     if df_leads is not None and df_events is not None:
         merge_tables(engine, df_leads, df_events)
         logger.info("Объединение и загрузка данных прошла успешно!")
     else:
         # Обработка ситуации, если один из DataFrame равен None
         logger.warning("Ошибка при получении данных из API или чтении файлов!")
+
+    # Bitrix24
+    logger.warning("Начался процесс выгрузки данных из Bitrix24 системы!")
+    bitrix24 = Bitrix(bitrix24_data.webhook_link)
+    bitrix24_params = params_bitrix24(date_bitrix24=bitrix24_data.date_bitrix24, list_stages=bitrix24_data.stages)
+    get_deals(bitrix24=bitrix24, engine=engine, params=bitrix24_params,
+              required_columns=bitrix24_data.columns_bitrix24, replace_dict=dict_bitrix24)
 
     # Yandex
     logger.warning("Начался процесс выгрузки данных из Yandex системы!")

@@ -11,10 +11,20 @@ class AmoData:
     redirect_uri: str
     access_token: str
     refresh_token: str
+    columns_leads: list
+    columns_events: list
     finish_amo_leads: str
     start_amo_leads: str
     finish_amo_events: str
     start_amo_events: str
+
+
+@dataclass
+class Bitrix24:
+    webhook_link: str
+    columns_bitrix24: list
+    stages: list
+    date_bitrix24: str
 
 
 @dataclass
@@ -23,7 +33,7 @@ class YandexData:
     logins: list
     reports_url: str
     goals_id: list
-    columns: list
+    columns_yandex: list
     finish_yandex_date: str
     start_yandex_date: str
 
@@ -50,17 +60,25 @@ def load_config(path: str = None):
             redirect_uri=env.str("REDIRECT_URI"),
             refresh_token=env.str("REFRESH_TOKEN"),
             access_token=env.str("ACCESS_TOKEN"),
+            columns_leads=env.list('COLUMNS_LEADS'),
+            columns_events=env.list('COLUMNS_EVENTS'),
             finish_amo_leads=env.str("FINISH_AMO_LEADS"),
             start_amo_leads=env.str("START_AMO_LEADS"),
             finish_amo_events=env.str("FINISH_AMO_EVENTS"),
             start_amo_events=env.str("START_AMO_EVENTS"),
+        ),
+        'bitrix24': Bitrix24(
+            webhook_link=env.str('WEBHOOK_LINK'),
+            columns_bitrix24=env.list('COLUMNS_BITRIX24'),
+            stages=env.list('STAGES'),
+            date_bitrix24=env.str('DATE_BITRIX24'),
         ),
         'yandex': YandexData(
             reports_url=env.str("REPORTS_URL"),
             tokens=env.list("TOKENS"),
             logins=env.list("LOGINS"),
             goals_id=env.list('GOALS_ID'),
-            columns=env.list('COLUMNS'),
+            columns_yandex=env.list('COLUMNS_YANDEX'),
             finish_yandex_date=env.str("FINISH_YANDEX_DATE"),
             start_yandex_date=env.str("START_YANDEX_DATE"),
         ),
