@@ -74,6 +74,30 @@ def get_leads(link_leads, data_headers, column_leads=None):
     else:
         logger.warning('Отсутствует columns_leads. Функция leads.')
 
+    if 'utm_content' in column_leads:
+        def split_utm_content(df):
+            # Разбиваем 'utm_content' на несколько столбцов по разделителю '||'
+            utm_df = df['utm_content'].str.split('\|\|', expand=True)
+
+            # Называем новые столбцы
+            utm_df.columns = [f'utm_content_{col.split(":")[0]}' for col in utm_df.iloc[0]]
+
+            # Теперь разбиваем каждый из этих столбцов по ':', чтобы отделить ключи от значений
+            for col in utm_df.columns:
+                utm_df[col] = utm_df[col].str.split(':').str[1]
+
+            # Добавляем новые столбцы обратно в исходный dataframe
+            df = pd.concat([df, utm_df], axis=1)
+
+            # Удаляем исходный столбец 'utm_content'
+            df = df.drop('utm_content', axis=1)
+
+            return df
+
+        df = split_utm_content(df)
+    else:
+        logger.info('Нет столбцов для удаления. Функция leads.')
+
     try:
         df['created_at'] = pd.to_datetime(df['created_at'], unit='s')
         df['created_at'] = df['created_at'].dt.date
@@ -143,19 +167,23 @@ def get_events(link_events, data_headers, replace_dict_events, column_events=Non
 
 
 def merge_tables(engine, df1, df2):
-    merged_table = pd.merge(df2, df1, on='id', how='left')
-    merged_table = merged_table.dropna(subset=['name'])  # замените 'name' на нужный столбец
     try:
-        merged_table = merged_table.drop(
-            columns=['Unnamed: 0_x', 'Unnamed: 0_y'], axis=1)
-        logger.info('Удаление колонок прошло успешно! Функция объединения - merge_tables.')
-    except KeyError:
-        logger.warning(f'Ключ не найден - пропускаем. Функция Merge_tables.')
-    # Сохранение объединенной таблицы в Excel файл
-    try:
-        merged_table['created_at'] = merged_table['created_at'].dt.date
-        merged_table['date_event'] = merged_table['date_event'].dt.date
-        merged_table['updated_at'] = merged_table['updated_at'].dt.date
+        merged_table = pd.merge(df2, df1, on='id', how='left')
+        merged_table = merged_table.dropna(subset=['name'])  # замените 'name' на нужный столбец
+        try:
+            merged_table = merged_table.drop(
+                columns=['Unnamed: 0_x', 'Unnamed: 0_y'], axis=1)
+            logger.info('Удаление колонок прошло успешно! Функция объединения - merge_tables.')
+        except KeyError:
+            logger.warning(f'Ключ не найден - пропускаем. Функция Merge_tables.')
+        # Сохранение объединенной таблицы в Excel файл
+        try:
+            merged_table['created_at'] = merged_table['created_at'].dt.date
+            merged_table['date_event'] = merged_table['date_event'].dt.date
+            merged_table['updated_at'] = merged_table['updated_at'].dt.date
+        except Exception as error:
+            logger.warning(f'Дата не была поменяна - {error}. Функция объединения - merge_tables.')
+        amo_to_database(engine, merged_table)
     except Exception as error:
-        logger.warning(f'Дата не была поменяна - {error}. Функция объединения - merge_tables.')
-    amo_to_database(engine, merged_table)
+        logger.error(f'Возникла ошибка при слиянии таблиц leads and events - {error}!'
+                     f'Данные не были выгружены в базу данных!')
