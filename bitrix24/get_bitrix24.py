@@ -21,7 +21,6 @@ def get_deals(bitrix24, engine, params, required_columns, replace_dict):
                 logger.info('Нет столбцов для удаления. Функция Bitrix24.')
         else:
             logger.warning('Отсутствует колонка.')
-
         # Проверьте, есть ли сделка уже в базе данных
         df_deals['STAGE_ID'] = df_deals['STAGE_ID'].replace(replace_dict)
         df_deals['MOVED_TIME'] = pd.to_datetime(df_deals['MOVED_TIME']).dt.date
