@@ -11,7 +11,7 @@ from fast_bitrix24 import Bitrix
 from amocrm.amo_data import get_leads, merge_tables, get_events
 from data.config import Config
 from yandex.params_yandex import body, create_headers
-from yandex.get_yandex import yandex, yandex_to_database
+from yandex.get_yandex import yandex, yandex_to_database, rename_conversions
 
 config = Config()
 config.load_from_env('.env')
@@ -39,7 +39,6 @@ def run():
     df_events = get_events(link_events, data_headers, dict_events, amocrm_data.columns_events)
     if df_leads is not None and df_events is not None:
         merge_tables(engine, df_leads, df_events)
-        logger.info("Объединение и загрузка данных прошла успешно!")
     else:
         # Обработка ситуации, если один из DataFrame равен None
         logger.warning("Ошибка при получении данных из API или чтении файлов!")
@@ -60,8 +59,9 @@ def run():
         headers = create_headers(token, login)
         df1 = yandex(yandex_data.reports_url, body, headers)
         df_yandex = pd.concat([df_yandex, df1])
+        df_yandex = rename_conversions(df_yandex)
     try:
-        df_yandex = df_yandex[df_yandex['Cost'] != 0]
+        logger.warning("Начался процесс выгрузки данных из Yandex системы!")
         yandex_to_database(engine, df_yandex)
         logger.info("Выгрузка данных Yandex прошла успешно!")
     except Exception as warning:
