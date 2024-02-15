@@ -76,25 +76,32 @@ def get_leads(link_leads, data_headers, column_leads=None):
 
     if 'utm_content' in column_leads:
         def split_utm_content(df):
-            # Разбиваем 'utm_content' на несколько столбцов по разделителю '||'
-            utm_df = df['utm_content'].str.split('\|\|', expand=True)
+            # Находим первую непустую строку для определения названий колонок
+            first_non_empty = df['utm_content'].dropna().iloc[0]
+            # Разбиваем её для создания списка названий колонок
+            column_names = [f'utm_content_{item.split(":")[0]}' for item in first_non_empty.split('\|\|')]
 
-            # Называем новые столбцы
-            utm_df.columns = [f'utm_content_{col.split(":")[0]}' for col in utm_df.iloc[0]]
+            # Разделяем столбец на несколько столбцов
+            utm_df = df['utm_content'].str.split('//', expand=True)
 
-            # Теперь разбиваем каждый из этих столбцов по ':', чтобы отделить ключи от значений
-            for col in utm_df.columns:
+            # Обрезаем лишние столбцы если они есть
+            utm_df = utm_df.iloc[:, :len(column_names)]
+
+            # Присваиваем названия новым столбцам
+            utm_df.columns = column_names
+
+            # Разделяем значения в каждом из новых столбцов по ':'
+            for col in column_names:
                 utm_df[col] = utm_df[col].str.split(':').str[1]
 
             # Добавляем новые столбцы обратно в исходный dataframe
-            df = pd.concat([df, utm_df], axis=1)
-
-            # Удаляем исходный столбец 'utm_content'
-            df = df.drop('utm_content', axis=1)
+            df = pd.concat([df.drop('utm_content', axis=1), utm_df], axis=1)
 
             return df
-
-        df = split_utm_content(df)
+        try:
+            df = split_utm_content(df)
+        except Exception as error:
+            logger.warning(f'Отсутствует {error}.')
     else:
         logger.info('Нет столбцов для удаления. Функция leads.')
 
@@ -185,5 +192,5 @@ def merge_tables(engine, df1, df2):
             logger.warning(f'Дата не была поменяна - {error}. Функция объединения - merge_tables.')
         amo_to_database(engine, merged_table)
     except Exception as error:
-        logger.error(f'Возникла ошибка при слиянии таблиц leads and events - {error}!'
+        logger.error(f'Возникла ошибка при слиянии таблиц leads and events - {error}! '
                      f'Данные не были выгружены в базу данных!')

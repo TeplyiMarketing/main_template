@@ -31,9 +31,9 @@ def yandex_to_database(engine, df1):
     try:
         df1.to_sql(name='yandex', con=engine, if_exists='append', index=False)
         logger.warning("Выгрузка yandex прошла с добавлением. Функция yandex_to_db.")
-    except:
+    except Exception as err:
         df1.to_sql(name='yandex', con=engine, if_exists='replace', index=False)
-        logger.warning("Выгрузка yandex прошла с заменой. Функция yandex_to_db.")
+        logger.warning(f"Выгрузка yandex прошла с заменой. Функция yandex_to_db. {err}")
 
 
 # --- Запуск цикла для выполнения запросов ---
@@ -41,6 +41,7 @@ def yandex_to_database(engine, df1):
 # Если получен HTTP-код 201 или 202, выполняются повторные запросы
 def yandex(reports_url, body, headers):
     while True:
+        retry_in = int(120)
         try:
             request = requests.post(reports_url, body, headers=headers)
             if request.status_code == 400:
@@ -53,12 +54,10 @@ def yandex(reports_url, body, headers):
                 return pd.read_csv(io.StringIO(request.text), sep='\t', encoding='utf-8', low_memory=False)
             elif request.status_code == 201:
                 logger.info("Отчет успешно поставлен в очередь в режиме офлайн.")
-                retry_in = int(120)
                 logger.info(f"Повторная отправка запроса через {retry_in} секунд.")
                 sleep(retry_in)
             elif request.status_code == 202:
                 logger.info("Отчет успешно поставлен в очередь в режиме офлайн.")
-                retry_in = int(120)
                 logger.info(f"Повторная отправка запроса через {retry_in} секунд.")
                 sleep(retry_in)
             elif request.status_code == 500:
