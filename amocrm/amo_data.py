@@ -78,8 +78,16 @@ def get_leads(link_leads, data_headers, column_leads=None):
         def split_utm_content(df):
             # Находим первую непустую строку для определения названий колонок
             first_non_empty = df['utm_content'].dropna().iloc[0]
+
+            if '//' in first_non_empty:
+                delimiter = '//'
+            elif '||' in first_non_empty:
+                delimiter = '||'
+            else:
+                raise ValueError("Ни один из ожидаемых разделителей не найден.")
+
             # Разбиваем её для создания списка названий колонок
-            column_names = [f'utm_content_{item.split(":")[0]}' for item in first_non_empty.split('\|\|')]
+            column_names = [f'utm_content_{item.split(":")[0]}' for item in first_non_empty.split(delimiter)]
 
             # Разделяем столбец на несколько столбцов
             utm_df = df['utm_content'].str.split('//', expand=True)
@@ -98,6 +106,7 @@ def get_leads(link_leads, data_headers, column_leads=None):
             df = pd.concat([df.drop('utm_content', axis=1), utm_df], axis=1)
 
             return df
+
         try:
             df = split_utm_content(df)
         except Exception as error:
