@@ -117,6 +117,36 @@ def get_leads(link_leads, data_headers, column_leads=None):
             df = split_utm_content(df)
         except Exception as error:
             logger.warning(f'Ошибка разделения -  {error}.')
+
+        def split_utm_campaign_and_insert(df):
+            if 'UTM_campaign' not in df.columns:
+                print("Столбец 'UTM_campaign' не найден в DataFrame.")
+                return df
+
+            # Извлекаем ID из столбца 'UTM_campaign'
+            df['UTM_campaign_id'] = df['UTM_campaign'].str.split('-').str[-1]
+
+            # Преобразуем 'UTM_campaign_id' в числовой формат
+            df['UTM_campaign_id'] = pd.to_numeric(df['UTM_campaign_id'], errors='coerce')
+
+            # Находим индекс столбца 'UTM_campaign'
+            campaign_index = df.columns.get_loc('UTM_campaign') + 1
+
+            # Создаем копию столбца 'UTM_campaign_id'
+            campaign_id_column = df['UTM_campaign_id']
+
+            # Удаляем 'UTM_campaign_id' из текущего положения
+            df.drop('UTM_campaign_id', axis=1, inplace=True)
+
+            # Вставляем 'UTM_campaign_id' рядом со столбцом 'UTM_campaign'
+            df.insert(campaign_index, 'UTM_campaign_id', campaign_id_column)
+
+            return df
+
+        try:
+            df = split_utm_campaign_and_insert(df)
+        except Exception as error:
+            logger.warning(f'Ошибка разделения -  {error}.')
     else:
         logger.info('Нет столбцов для удаления. Функция leads.')
 
