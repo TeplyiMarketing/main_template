@@ -74,43 +74,49 @@ def get_leads(link_leads, data_headers, column_leads=None):
     else:
         logger.warning('Отсутствует columns_leads. Функция leads.')
 
-    if 'utm_content' in column_leads:
+    if 'UTM_content' in column_leads:
         def split_utm_content(df):
-            # Находим первую непустую строку для определения названий колонок
-            first_non_empty = df['utm_content'].dropna().iloc[0]
+            logger.debug("Начало обработки данных")
 
-            if '//' in first_non_empty:
-                delimiter = '//'
-            elif '||' in first_non_empty:
-                delimiter = '||'
-            else:
-                raise ValueError("Ни один из ожидаемых разделителей не найден.")
+            # Явно преобразуем все значения в столбце 'UTM_content' в строки
+            df['UTM_content'] = df['UTM_content'].apply(lambda x: str(x))
 
-            # Разбиваем её для создания списка названий колонок
-            column_names = [f'utm_content_{item.split(":")[0]}' for item in first_non_empty.split(delimiter)]
+            # Определяем строки, содержащие 'groupid'
+            contains_groupid = df['UTM_content'].str.contains('groupid')
+            logger.debug(f"Строки, содержащие 'groupid': {df[contains_groupid].index.tolist()}")
 
-            # Разделяем столбец на несколько столбцов
-            utm_df = df['utm_content'].str.split('//', expand=True)
+            if not contains_groupid.any():
+                logger.warning("Строк с 'groupid' не найдено. Пропуск разделения.")
+                return df
 
-            # Обрезаем лишние столбцы если они есть
-            utm_df = utm_df.iloc[:, :len(column_names)]
+            first_non_empty = df[contains_groupid]['UTM_content'].iloc[0]
+            delimiter = '||' if '||' in first_non_empty else '//'
+            logger.info(f"Используемый разделитель: '{delimiter}'")
 
-            # Присваиваем названия новым столбцам
-            utm_df.columns = column_names
+            column_names = [f'utm_content_{item.split(":")[0].strip()}' for item in first_non_empty.split(delimiter)]
 
-            # Разделяем значения в каждом из новых столбцов по ':'
-            for col in column_names:
-                utm_df[col] = utm_df[col].str.split(':').str[1]
+            # Создаем список словарей для новых данных
+            utm_data_list = []
+            for idx, content in df[contains_groupid].iterrows():
+                data_dict = {}
+                for item in content['UTM_content'].split(delimiter):
+                    if ':' in item:
+                        key, value = item.split(':', 1)
+                        data_dict[f'utm_content_{key.strip()}'] = value.strip()
+                utm_data_list.append(data_dict)
 
-            # Добавляем новые столбцы обратно в исходный dataframe
-            df = pd.concat([df.drop('utm_content', axis=1), utm_df], axis=1)
+            utm_data = pd.DataFrame(utm_data_list)
+
+            df = pd.concat([df.drop('UTM_content', axis=1).reset_index(drop=True), utm_data.reset_index(drop=True)],
+                           axis=1)
+            logger.info("Конкатенация новых столбцов с исходным DataFrame выполнена.")
 
             return df
 
         try:
             df = split_utm_content(df)
         except Exception as error:
-            logger.warning(f'Отсутствует {error}.')
+            logger.warning(f'Ошибка разделения -  {error}.')
     else:
         logger.info('Нет столбцов для удаления. Функция leads.')
 
