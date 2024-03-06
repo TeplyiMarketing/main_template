@@ -1,12 +1,13 @@
 import pandas as pd
 from logs.logging import logger
 
-def get_deals(bitrix24, engine, params, required_columns, replace_dict):
+
+def get_deals(bitrix24, engine, params, columns_bitrix24, replace_dict):
     try:
         deals = bitrix24.get_all('crm.deal.list', params)
         df_deals = pd.DataFrame(deals)
-        if required_columns:
-            columns_to_drop = [col for col in df_deals.columns if col not in required_columns]
+        if columns_bitrix24:
+            columns_to_drop = [col for col in df_deals.columns if col not in columns_bitrix24]
             removed_columns = []  # Список для хранения названий удаленных столбцов
             for i in columns_to_drop:
                 try:
@@ -14,13 +15,15 @@ def get_deals(bitrix24, engine, params, required_columns, replace_dict):
                     removed_columns.append(i)  # Добавление названия столбца в список
                 except KeyError:
                     logger.warning('Ключ не найден - пропускаем.Функция Bitrix24')
-            if 'UTM_CONTENT' in required_columns:
+            if 'UTM_CONTENT' in columns_bitrix24:
                 def split_utm_content(df):
+                    column_name = 'UTM_CONTENT'
+
                     logger.debug("Начало обработки данных")
 
                     # Явно преобразуем все значения в столбце 'UTM_CONTENT' в строки
-                    df['UTM_CONTENT'] = df['UTM_CONTENT'].apply(lambda x: '' if pd.isna(x) else str(x))
-                    contains_groupid = df['UTM_CONTENT'].str.contains('groupid', na=False)
+                    df[column_name] = df[column_name].apply(lambda x: '' if pd.isna(x) else str(x))
+                    contains_groupid = df[column_name].str.contains('groupid', na=False)
 
                     logger.debug(f"Строки, содержащие 'groupid': {df[contains_groupid].index.tolist()}")
 
@@ -29,13 +32,14 @@ def get_deals(bitrix24, engine, params, required_columns, replace_dict):
                         return df
 
                     # Индекс для вставки новых столбцов сразу после 'UTM_CONTENT'
-                    utm_index = df.columns.get_loc('UTM_CONTENT') + 1
-
+                    utm_index = df.columns.get_loc(column_name) + 1
+                    groupid_found = False
                     # Перебираем строки DataFrame
                     for idx, content in df.iterrows():
-                        if 'groupid' in content['UTM_CONTENT']:
-                            delimiter = '||' if '||' in content['UTM_CONTENT'] else '//'
-                            split_data = content['UTM_CONTENT'].split(delimiter)
+                        if 'groupid' in content[column_name]:
+                            groupid_found = True
+                            delimiter = '||' if '||' in content[column_name] else '//'
+                            split_data = content[column_name].split(delimiter)
                             split_dict = {}
                             for item in split_data:
                                 if ':' in item:
@@ -49,7 +53,10 @@ def get_deals(bitrix24, engine, params, required_columns, replace_dict):
                                     utm_index += 1
                                 df.at[idx, key] = value
 
-                    logger.info("Разделение UTM_CONTENT выполнено")
+                    if groupid_found:
+                        logger.info(f"Обработка {column_name} завершена успешно.")
+                    else:
+                        logger.warning(f"Данные с 'groupid' не найдены в {column_name}.")
 
                     return df
 
@@ -58,7 +65,7 @@ def get_deals(bitrix24, engine, params, required_columns, replace_dict):
                 except Exception as error:
                     logger.warning(f'Ошибка разделения -  {error}.')
 
-                if 'UTM_CAMPAIGN' in required_columns:
+                if 'UTM_CAMPAIGN' in columns_bitrix24:
                     def split_utm_campaign_and_insert(df):
                         if 'UTM_CAMPAIGN' not in df.columns:
                             print("Столбец 'UTM_CAMPAIGN' не найден в DataFrame.")

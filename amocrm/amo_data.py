@@ -76,12 +76,13 @@ def get_leads(link_leads, data_headers, column_leads=None):
 
     if 'UTM_content' in column_leads:
         def split_utm_content(df):
-            content = column_leads['UTM_content']
+            column_name = 'utm_content'
+
             logger.debug("Начало обработки данных")
 
             # Явно преобразуем все значения в столбце 'UTM_CONTENT' в строки
-            df[content] = df[content].apply(lambda x: '' if pd.isna(x) else str(x))
-            contains_groupid = df[content].str.contains('groupid', na=False)
+            df[column_name] = df[column_name].apply(lambda x: '' if pd.isna(x) else str(x))
+            contains_groupid = df[column_name].str.contains('groupid', na=False)
 
             logger.debug(f"Строки, содержащие 'groupid': {df[contains_groupid].index.tolist()}")
 
@@ -90,13 +91,14 @@ def get_leads(link_leads, data_headers, column_leads=None):
                 return df
 
             # Индекс для вставки новых столбцов сразу после 'UTM_CONTENT'
-            utm_index = df.columns.get_loc(content) + 1
-
+            utm_index = df.columns.get_loc(column_name) + 1
+            groupid_found = False
             # Перебираем строки DataFrame
             for idx, content in df.iterrows():
-                if 'groupid' in content[content]:
-                    delimiter = '||' if '||' in content[content] else '//'
-                    split_data = content[content].split(delimiter)
+                if 'groupid' in content[column_name]:
+                    groupid_found = True
+                    delimiter = '||' if '||' in content[column_name] else '//'
+                    split_data = content[column_name].split(delimiter)
                     split_dict = {}
                     for item in split_data:
                         if ':' in item:
@@ -110,7 +112,10 @@ def get_leads(link_leads, data_headers, column_leads=None):
                             utm_index += 1
                         df.at[idx, key] = value
 
-            logger.info("Разделение utm_content выполнено")
+            if groupid_found:
+                logger.info(f"Обработка {column_name} завершена успешно.")
+            else:
+                logger.warning(f"Данные с 'groupid' не найдены в {column_name}.")
 
             return df
 
