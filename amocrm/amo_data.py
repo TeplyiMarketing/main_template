@@ -76,40 +76,41 @@ def get_leads(link_leads, data_headers, column_leads=None):
 
     if 'UTM_content' in column_leads:
         def split_utm_content(df):
+            content = column_leads['UTM_content']
             logger.debug("Начало обработки данных")
 
-            # Явно преобразуем все значения в столбце 'UTM_content' в строки
-            df['UTM_content'] = df['UTM_content'].apply(lambda x: str(x))
+            # Явно преобразуем все значения в столбце 'UTM_CONTENT' в строки
+            df[content] = df[content].apply(lambda x: '' if pd.isna(x) else str(x))
+            contains_groupid = df[content].str.contains('groupid', na=False)
 
-            # Определяем строки, содержащие 'groupid'
-            contains_groupid = df['UTM_content'].str.contains('groupid')
             logger.debug(f"Строки, содержащие 'groupid': {df[contains_groupid].index.tolist()}")
 
             if not contains_groupid.any():
                 logger.warning("Строк с 'groupid' не найдено. Пропуск разделения.")
                 return df
 
-            first_non_empty = df[contains_groupid]['UTM_content'].iloc[0]
-            delimiter = '||' if '||' in first_non_empty else '//'
-            logger.info(f"Используемый разделитель: '{delimiter}'")
+            # Индекс для вставки новых столбцов сразу после 'UTM_CONTENT'
+            utm_index = df.columns.get_loc(content) + 1
 
-            column_names = [f'utm_content_{item.split(":")[0].strip()}' for item in first_non_empty.split(delimiter)]
+            # Перебираем строки DataFrame
+            for idx, content in df.iterrows():
+                if 'groupid' in content[content]:
+                    delimiter = '||' if '||' in content[content] else '//'
+                    split_data = content[content].split(delimiter)
+                    split_dict = {}
+                    for item in split_data:
+                        if ':' in item:
+                            key, value = item.split(':', 1)
+                            split_dict[f'utm_content_{key.strip()}'] = value.strip()
+                    # Для каждого ключа в split_dict добавляем значение в соответствующий столбец DataFrame
+                    for key, value in split_dict.items():
+                        # Если столбец еще не существует, создаем его
+                        if key not in df:
+                            df.insert(utm_index, key, None)
+                            utm_index += 1
+                        df.at[idx, key] = value
 
-            # Создаем список словарей для новых данных
-            utm_data_list = []
-            for idx, content in df[contains_groupid].iterrows():
-                data_dict = {}
-                for item in content['UTM_content'].split(delimiter):
-                    if ':' in item:
-                        key, value = item.split(':', 1)
-                        data_dict[f'utm_content_{key.strip()}'] = value.strip()
-                utm_data_list.append(data_dict)
-
-            utm_data = pd.DataFrame(utm_data_list)
-
-            df = pd.concat([df.drop('UTM_content', axis=1).reset_index(drop=True), utm_data.reset_index(drop=True)],
-                           axis=1)
-            logger.info("Конкатенация новых столбцов с исходным DataFrame выполнена.")
+            logger.info("Разделение utm_content выполнено")
 
             return df
 

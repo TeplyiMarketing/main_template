@@ -10,11 +10,15 @@ yandex_data = config.get('yandex')
 body = {
     "params": {
         "SelectionCriteria": {"DateFrom": yandex_data.start_yandex_date, "DateTo": yandex_data.finish_yandex_date},
-        "Goals": yandex_data.goals_id, "AttributionModels": ["LYDC"], "FieldNames": yandex_data.columns_yandex,
+        "FieldNames": yandex_data.columns_yandex,
         "ReportName": f"Отчет {random.randint(1, 10000)}",
         "ReportType": "CRITERIA_PERFORMANCE_REPORT", "DateRangeType": "CUSTOM_DATE", "Format": "TSV",
         "IncludeVAT": "YES", "IncludeDiscount": "NO"}
 }
+
+if yandex_data.goals_id != ['None']:
+    body["params"]["Goals"] = yandex_data.goals_id
+    body["params"]["AttributionModels"] = ["LYDC"]
 
 body = json.dumps(body, indent=4)
 
