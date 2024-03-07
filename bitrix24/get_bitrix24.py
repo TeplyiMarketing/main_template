@@ -1,4 +1,6 @@
 import pandas as pd
+
+from data.replace_dicts import column_utm_bitrix24
 from logs.logging import logger
 
 
@@ -17,13 +19,11 @@ def get_deals(bitrix24, engine, params, columns_bitrix24, replace_dict):
                     logger.warning('Ключ не найден - пропускаем.Функция Bitrix24')
             if 'UTM_CONTENT' in columns_bitrix24:
                 def split_utm_content(df):
-                    column_name = 'UTM_CONTENT'
-
                     logger.debug("Начало обработки данных")
 
                     # Явно преобразуем все значения в столбце 'UTM_CONTENT' в строки
-                    df[column_name] = df[column_name].apply(lambda x: '' if pd.isna(x) else str(x))
-                    contains_groupid = df[column_name].str.contains('groupid', na=False)
+                    df[column_utm_bitrix24] = df[column_utm_bitrix24].apply(lambda x: '' if pd.isna(x) else str(x))
+                    contains_groupid = df[column_utm_bitrix24].str.contains('groupid', na=False)
 
                     logger.debug(f"Строки, содержащие 'groupid': {df[contains_groupid].index.tolist()}")
 
@@ -32,14 +32,14 @@ def get_deals(bitrix24, engine, params, columns_bitrix24, replace_dict):
                         return df
 
                     # Индекс для вставки новых столбцов сразу после 'UTM_CONTENT'
-                    utm_index = df.columns.get_loc(column_name) + 1
+                    utm_index = df.columns.get_loc(column_utm_bitrix24) + 1
                     groupid_found = False
                     # Перебираем строки DataFrame
                     for idx, content in df.iterrows():
-                        if 'groupid' in content[column_name]:
+                        if 'groupid' in content[column_utm_bitrix24]:
                             groupid_found = True
-                            delimiter = '||' if '||' in content[column_name] else '//'
-                            split_data = content[column_name].split(delimiter)
+                            delimiter = '||' if '||' in content[column_utm_bitrix24] else '//'
+                            split_data = content[column_utm_bitrix24].split(delimiter)
                             split_dict = {}
                             for item in split_data:
                                 if ':' in item:
@@ -54,9 +54,9 @@ def get_deals(bitrix24, engine, params, columns_bitrix24, replace_dict):
                                 df.at[idx, key] = value
 
                     if groupid_found:
-                        logger.info(f"Обработка {column_name} завершена успешно.")
+                        logger.info(f"Обработка {column_utm_bitrix24} завершена успешно.")
                     else:
-                        logger.warning(f"Данные с 'groupid' не найдены в {column_name}.")
+                        logger.warning(f"Данные с 'groupid' не найдены в {column_utm_bitrix24}.")
 
                     return df
 

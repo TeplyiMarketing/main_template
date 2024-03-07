@@ -5,9 +5,14 @@ dict_events = {
     143: 'Закрыто и не реализовано',
 }
 
+# WON стандартный!
 dict_bitrix24 = {
-    'WON': "Успешно",
-}  # WON дефолтный, не менять! Вставляем нужные нам этапы и как мы хотим их переименовать
+         'WON': "Успешно",
+      }
+
+# Меняем на свои!
+column_utm_amocrm = 'UTM_content'
+column_utm_bitrix24 = 'UTM_CONTENT'
 
 
 def params_bitrix24(date_bitrix24, list_stages):
