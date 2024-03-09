@@ -8,12 +8,23 @@ def get_deals(bitrix24, engine, params, columns_bitrix24, replace_dict):
     try:
         deals = bitrix24.get_all('crm.deal.list', params)
         df_deals = pd.DataFrame(deals)
+        strategy = bitrix24.get_all('crm.stagehistory.list', {'entityTypeId': 2, 'TYPE_ID': 2, })
+        df_strategy = pd.DataFrame(strategy)
+
+        merged_df = pd.merge(df_deals, df_strategy, left_on='ID', right_on='OWNER_ID', how='left')
+
+        # Обновляем данные в новых строках
+        merged_df['MOVED_TIME'] = merged_df['CREATED_TIME'].fillna(merged_df['MOVED_TIME'])
+        merged_df['STAGE_ID_x'] = merged_df['STAGE_ID_y'].fillna(merged_df['STAGE_ID_x'])
+
+        # Переименовываем столбцы
+        merged_df.rename(columns={'ID_x': 'ID', 'STAGE_ID_x': 'STAGE_ID'}, inplace=True)
         if columns_bitrix24:
-            columns_to_drop = [col for col in df_deals.columns if col not in columns_bitrix24]
+            columns_to_drop = [col for col in merged_df.columns if col not in columns_bitrix24]
             removed_columns = []  # Список для хранения названий удаленных столбцов
             for i in columns_to_drop:
                 try:
-                    df_deals = df_deals.drop(columns=i, axis=1)
+                    merged_df = merged_df.drop(columns=i, axis=1)
                     removed_columns.append(i)  # Добавление названия столбца в список
                 except KeyError:
                     logger.warning('Ключ не найден - пропускаем.Функция Bitrix24')
@@ -61,7 +72,7 @@ def get_deals(bitrix24, engine, params, columns_bitrix24, replace_dict):
                     return df
 
                 try:
-                    df_deals = split_utm_content(df_deals)
+                    df_deals = split_utm_content(merged_df)
                 except Exception as error:
                     logger.warning(f'Ошибка разделения -  {error}.')
 
@@ -92,7 +103,7 @@ def get_deals(bitrix24, engine, params, columns_bitrix24, replace_dict):
                         return df
 
                     try:
-                        df_deals = split_utm_campaign_and_insert(df_deals)
+                        df_deals = split_utm_campaign_and_insert(merged_df)
                     except Exception as error:
                         logger.warning(f'Ошибка разделения -  {error}.')
 
@@ -103,9 +114,9 @@ def get_deals(bitrix24, engine, params, columns_bitrix24, replace_dict):
         else:
             logger.warning('Отсутствует колонка.')
         # Проверьте, есть ли сделка уже в базе данных
-        df_deals['STAGE_ID'] = df_deals['STAGE_ID'].replace(replace_dict)
-        df_deals['MOVED_TIME'] = pd.to_datetime(df_deals['MOVED_TIME']).dt.date
-        df_deals.to_sql(name='bitrix24', con=engine, if_exists='replace', index=False)
+        merged_df['STAGE_ID'] = merged_df['STAGE_ID'].replace(replace_dict)
+        merged_df['MOVED_TIME'] = pd.to_datetime(merged_df['MOVED_TIME']).dt.date
+        merged_df.to_sql(name='bitrix24', con=engine, if_exists='replace', index=False)
         logger.warning(f'Выгрузка таблицы Bitrix24 прошла успешно!')
 
     except Exception as error:
