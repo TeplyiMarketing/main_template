@@ -9,9 +9,12 @@ amocrm_config = config.get('amocrm')
 if __name__ == "__main__":
     update_dates_amocrm()
     update_dates_yandex()
-    auth(subdomain=amocrm_config.subdomain, client_id=amocrm_config.client_id,
-         client_secret=amocrm_config.client_secret,
-         redirect_uri=amocrm_config.redirect_uri, refresh_token=amocrm_config.refresh_token)
-    get_access_token(subdomain=amocrm_config.subdomain, client_id=amocrm_config.client_id,
-                     client_secret=amocrm_config.client_secret,
-                     redirect_uri=amocrm_config.redirect_uri, refresh_token=amocrm_config.refresh_token)
+    # Запускаем auth и проверяем, была ли она успешной
+    if not auth(subdomain=amocrm_config.subdomain, client_id=amocrm_config.client_id,
+                client_secret=amocrm_config.client_secret,
+                redirect_uri=amocrm_config.redirect_uri, refresh_token=amocrm_config.refresh_token):
+        # Если auth вернула ошибку (False), тогда запускаем get_access_token
+        get_access_token(subdomain=amocrm_config.subdomain, client_id=amocrm_config.client_id,
+                         client_secret=amocrm_config.client_secret,
+                         redirect_uri=amocrm_config.redirect_uri, refresh_token=amocrm_config.refresh_token)
+

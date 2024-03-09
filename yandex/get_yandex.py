@@ -9,24 +9,6 @@ from loguru import logger
 from requests.exceptions import ConnectionError
 
 
-def rename_conversions(df):
-    # Найдите все колонки, которые содержат 'Conversion' в их названии
-    conversion_columns = [col for col in df.columns if 'Conversions' in col]
-
-    # Создайте словарь с новыми именами
-    rename_dict = {}
-    for i, col in enumerate(conversion_columns, start=1):
-        if i == 1:
-            rename_dict[col] = 'Conversions'
-        else:
-            rename_dict[col] = f'Conversions_{i}'
-
-    # Переименуйте колонки в DataFrame
-    df = df.rename(columns=rename_dict)
-
-    return df
-
-
 def yandex_to_database(engine, df1):
     try:
         df1.to_sql(name='yandex', con=engine, if_exists='append', index=False)
@@ -68,7 +50,8 @@ def yandex(reports_url, body, headers):
             elif request.status_code == 502:
                 logger.info("Время формирования отчета превысило серверное ограничение.")
                 logger.info(
-                    "Пожалуйста, попробуйте изменить параметры запроса - уменьшить период и количество запрашиваемых данных.")
+                    "Пожалуйста, попробуйте изменить параметры запроса - уменьшить период и количество запрашиваемых "
+                    "данных.")
                 logger.info(f"JSON-код запроса: {body}.")
                 logger.info(f"JSON-код ответа сервера: \n{request.json()}.")
                 break

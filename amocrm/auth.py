@@ -34,8 +34,10 @@ def auth(subdomain, client_id, client_secret, redirect_uri, refresh_token):
             refresh = response.json()['refresh_token']
             set_key('.env', 'REFRESH_TOKEN', refresh)
             logger.info(response.status_code)
+            return True  # Возвращаем True, если функция выполнена успешно
         except KeyError:
             logger.warning(f'Ключ не найден - пропускаем. Функция Auth.')
     else:
         logger.info(response.status_code)
         logger.info(response.json())
+    return False  # Возвращаем False, если функция выполнена с ошибкой

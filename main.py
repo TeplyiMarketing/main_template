@@ -11,7 +11,7 @@ from fast_bitrix24 import Bitrix
 from amocrm.amo_data import get_leads, merge_tables, get_events
 from data.config import Config
 from yandex.params_yandex import body, create_headers
-from yandex.get_yandex import yandex, yandex_to_database, rename_conversions
+from yandex.get_yandex import yandex, yandex_to_database
 
 config = Config()
 config.load_from_env('.env')
@@ -51,7 +51,7 @@ def run():
     bitrix24 = Bitrix(bitrix24_data.webhook_link)
     bitrix24_params = params_bitrix24(date_bitrix24=bitrix24_data.date_bitrix24, list_stages=bitrix24_data.stages)
     get_deals(bitrix24=bitrix24, engine=engine, params=bitrix24_params,
-              required_columns=bitrix24_data.columns_bitrix24, replace_dict=dict_bitrix24)
+              columns_bitrix24=bitrix24_data.columns_bitrix24, replace_dict=dict_bitrix24)
 
     # Yandex
     logger.warning("Начался процесс выгрузки данных из Yandex системы!")
@@ -62,7 +62,6 @@ def run():
         headers = create_headers(token, login)
         df1 = yandex(yandex_data.reports_url, body, headers)
         df_yandex = pd.concat([df_yandex, df1])
-        df_yandex = rename_conversions(df_yandex)
     try:
         logger.warning("Начался процесс выгрузки данных из Yandex системы!")
         df_yandex = df_yandex[df_yandex['Cost'] != 0]
