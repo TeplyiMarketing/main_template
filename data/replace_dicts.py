@@ -7,8 +7,9 @@ dict_events = {
 
 # WON стандартный!
 dict_bitrix24 = {
-         'WON': "Успешно",
-      }
+    'NEW': 'Заявка создана',
+    'WON': "Успешно",
+}
 
 # Меняем на свои!
 column_utm_amocrm = 'UTM_content'
