@@ -2,6 +2,8 @@ import pandas as pd
 import requests as requests
 
 from data.replace_dicts import column_utm_amocrm
+
+from data.parameters import column_campaign_amocrm
 from logs.logging import logger
 import json
 
@@ -76,7 +78,7 @@ def get_leads(link_leads, data_headers, column_leads=None):
     else:
         logger.warning('Отсутствует columns_leads. Функция leads.')
 
-    if 'UTM_content' in column_leads:
+    if column_utm_amocrm in column_leads:
         def split_utm_content(df):
             logger.debug("Начало обработки данных")
 
@@ -124,20 +126,20 @@ def get_leads(link_leads, data_headers, column_leads=None):
         except Exception as error:
             logger.warning(f'Ошибка разделения -  {error}.')
 
-        if 'UTM_campaign' in column_leads:
+        if column_campaign_amocrm in column_leads:
             def split_utm_campaign_and_insert(df):
-                if 'UTM_campaign' not in df.columns:
-                    print("Столбец 'UTM_campaign' не найден в DataFrame.")
+                if column_campaign_amocrm not in df.columns:
+                    print(f"Столбец {column_campaign_amocrm} не найден в DataFrame.")
                     return df
 
                 # Извлекаем ID из столбца 'UTM_campaign'
-                df['UTM_campaign_id'] = df['UTM_campaign'].str.split('-').str[-1]
+                df['UTM_campaign_id'] = df[column_campaign_amocrm].str.split('-').str[-1]
 
                 # Преобразуем 'UTM_campaign_id' в числовой формат
                 df['UTM_campaign_id'] = pd.to_numeric(df['UTM_campaign_id'], errors='coerce')
 
                 # Находим индекс столбца 'UTM_campaign'
-                campaign_index = df.columns.get_loc('UTM_campaign') + 1
+                campaign_index = df.columns.get_loc(column_campaign_amocrm) + 1
 
                 # Создаем копию столбца 'UTM_campaign_id'
                 campaign_id_column = df['UTM_campaign_id']

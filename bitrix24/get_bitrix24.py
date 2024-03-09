@@ -1,6 +1,6 @@
 import pandas as pd
 
-from data.replace_dicts import column_utm_bitrix24
+from data.parameters import column_utm_bitrix24, column_campaign_bitrix24
 from logs.logging import logger
 
 
@@ -28,7 +28,7 @@ def get_deals(bitrix24, engine, params, columns_bitrix24, replace_dict):
                     removed_columns.append(i)  # Добавление названия столбца в список
                 except KeyError:
                     logger.warning('Ключ не найден - пропускаем.Функция Bitrix24')
-            if 'UTM_CONTENT' in columns_bitrix24:
+            if column_utm_bitrix24 in columns_bitrix24:
                 def split_utm_content(df):
                     logger.debug("Начало обработки данных")
 
@@ -76,20 +76,20 @@ def get_deals(bitrix24, engine, params, columns_bitrix24, replace_dict):
                 except Exception as error:
                     logger.warning(f'Ошибка разделения -  {error}.')
 
-                if 'UTM_CAMPAIGN' in columns_bitrix24:
+                if column_campaign_bitrix24 in columns_bitrix24:
                     def split_utm_campaign_and_insert(df):
-                        if 'UTM_CAMPAIGN' not in df.columns:
-                            print("Столбец 'UTM_CAMPAIGN' не найден в DataFrame.")
+                        if column_campaign_bitrix24 not in df.columns:
+                            print(f"Столбец {column_campaign_bitrix24} не найден в DataFrame.")
                             return df
 
                         # Извлекаем ID из столбца 'UTM_campaign'
-                        df['UTM_CAMPAIGN_ID'] = df['UTM_CAMPAIGN'].str.split('-').str[-1]
+                        df['UTM_CAMPAIGN_ID'] = df[column_campaign_bitrix24].str.split('-').str[-1]
 
                         # Преобразуем 'UTM_campaign_id' в числовой формат
                         df['UTM_CAMPAIGN_ID'] = pd.to_numeric(df['UTM_CAMPAIGN_ID'], errors='coerce')
 
                         # Находим индекс столбца 'UTM_campaign'
-                        campaign_index = df.columns.get_loc('UTM_CAMPAIGN') + 1
+                        campaign_index = df.columns.get_loc(column_campaign_bitrix24) + 1
 
                         # Создаем копию столбца 'UTM_campaign_id'
                         campaign_id_column = df['UTM_CAMPAIGN_ID']

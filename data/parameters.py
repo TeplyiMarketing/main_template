@@ -11,9 +11,13 @@ dict_bitrix24 = {
     'WON': "Успешно",
 }
 
+retry_yandex = int(60)
+
 # Меняем на свои!
 column_utm_amocrm = 'UTM_content'
+column_campaign_amocrm = 'UTM_campaign'
 column_utm_bitrix24 = 'UTM_CONTENT'
+column_campaign_bitrix24 = 'UTM_CAMPAIGN'
 
 
 def params_bitrix24(date_bitrix24, list_stages):

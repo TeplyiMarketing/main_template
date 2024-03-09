@@ -8,6 +8,8 @@ import requests
 from loguru import logger
 from requests.exceptions import ConnectionError
 
+from data.parameters import retry_yandex
+
 
 def yandex_to_database(engine, df1):
     try:
@@ -23,7 +25,6 @@ def yandex_to_database(engine, df1):
 # Если получен HTTP-код 201 или 202, выполняются повторные запросы
 def yandex(reports_url, body, headers):
     while True:
-        retry_in = int(120)
         try:
             request = requests.post(reports_url, body, headers=headers)
             if request.status_code == 400:
@@ -36,12 +37,12 @@ def yandex(reports_url, body, headers):
                 return pd.read_csv(io.StringIO(request.text), sep='\t', encoding='utf-8', low_memory=False)
             elif request.status_code == 201:
                 logger.info("Отчет успешно поставлен в очередь в режиме офлайн.")
-                logger.info(f"Повторная отправка запроса через {retry_in} секунд.")
-                sleep(retry_in)
+                logger.info(f"Повторная отправка запроса через {retry_yandex} секунд.")
+                sleep(retry_yandex)
             elif request.status_code == 202:
                 logger.info("Отчет успешно поставлен в очередь в режиме офлайн.")
-                logger.info(f"Повторная отправка запроса через {retry_in} секунд.")
-                sleep(retry_in)
+                logger.info(f"Повторная отправка запроса через {retry_yandex} секунд.")
+                sleep(retry_yandex)
             elif request.status_code == 500:
                 logger.info(
                     "При формировании отчета произошла ошибка. Пожалуйста, попробуйте повторить запрос позднее.")
