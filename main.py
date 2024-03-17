@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import create_engine
 
 from bitrix24.get_bitrix24 import get_deals
-from data.replace_dicts import params_bitrix24, dict_bitrix24, dict_events
+from data.parameters import params_bitrix24, dict_bitrix24, dict_events
 from logs.logging import logger
 from fast_bitrix24 import Bitrix
 

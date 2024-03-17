@@ -1,7 +1,7 @@
 import pandas as pd
 import requests as requests
 
-from data.replace_dicts import column_utm_amocrm
+from data.parameters import column_utm_amocrm
 
 from data.parameters import column_campaign_amocrm
 from logs.logging import logger
