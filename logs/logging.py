@@ -5,7 +5,7 @@ def trace_only(record):
     return record["level"].name == "TRACE"
 
 
-logger.add("logs/my_logs.log",
+logger.add("logs/logs.log",
            rotation="150 MB",
            retention="7 days",
            level="TRACE",
