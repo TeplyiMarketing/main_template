@@ -1,9 +1,14 @@
 from loguru import logger
 
-# Настройка Loguru для записи всех логов в общий файл
+
+def trace_only(record):
+    return record["level"].name == "TRACE"
+
+
 logger.add("logs/my_logs.log",
            rotation="150 MB",
            retention="7 days",
-           level="DEBUG",
+           level="TRACE",
            format="{time:YYYY-MM-DD} | {time:HH:mm} | {level} | {message}",
+           filter=trace_only
            )

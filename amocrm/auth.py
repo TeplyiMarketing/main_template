@@ -1,43 +1,40 @@
+import json
+
 import requests as requests
 from dotenv import set_key
+
 from logs.logging import logger
 
 
-def get_access_token(subdomain, client_id, client_secret, redirect_uri, refresh_token):
-    link_access = f'https://{subdomain}.amocrm.ru/oauth2/access_token'
-    data = {"client_id": client_id, "client_secret": client_secret, "grant_type": 'authorization_code',
-            "code": refresh_token, "redirect_uri": redirect_uri}
-    response = requests.post(link_access, data=data)
-    if response.status_code == 200:
-        try:
-            access_token = response.json()['access_token']
-            set_key('.env', 'ACCESS_TOKEN', access_token)
-            refresh_code = response.json()['refresh_token']
-            set_key('.env', 'REFRESH_TOKEN', refresh_code)
-            logger.info(response.status_code)
-        except KeyError:
-            logger.warning(f'Ключ не найден - пропускаем. Функция Auth.')
-    else:
-        logger.info(response.status_code)
-        logger.info(response.json())
+def refresh_token(env_path: str, response: json) -> int:
+    if response.status_code == 200 and response.json()['access_token'] and response.json()['refresh_token']:
+        logger.debug("Попытка обновления при статусе 200")
+        logger.trace(f"Попытка обновления при статусе {response.status_code} - {response.json()}")
+        set_key(env_path, 'REFRESH_TOKEN', response.json()['refresh_token'])
+        set_key(env_path, 'ACCESS_TOKEN', response.json()['access_token'])
+        return response.status_code
 
 
-def auth(subdomain, client_id, client_secret, redirect_uri, refresh_token):
-    link_access = f'https://{subdomain}.amocrm.ru/oauth2/access_token'
-    data = {"client_id": client_id, "client_secret": client_secret, "grant_type": 'refresh_token',
-            "refresh_token": refresh_token, "redirect_uri": redirect_uri}
-    response = requests.post(link_access, data=data)
-    if response.status_code == 200:
-        try:
-            access_token = response.json()['access_token']
-            set_key('.env', 'ACCESS_TOKEN', access_token)
-            refresh = response.json()['refresh_token']
-            set_key('.env', 'REFRESH_TOKEN', refresh)
-            logger.info(response.status_code)
-            return True  # Возвращаем True, если функция выполнена успешно
-        except KeyError:
-            logger.warning(f'Ключ не найден - пропускаем. Функция Auth.')
+def authorization(env_path: str, link_access: str, response_data: dict) -> int:
+    logger.trace(f"Входные данные - {response_data}")
+    response_to_amo = requests.post(link_access, data=response_data)
+    if response_to_amo.status_code == 200:
+        return refresh_token(env_path, response_to_amo)
+
+    if (response_to_amo.status_code == 400 and response_to_amo.json()['hint'] == "Authorization code has been revoked"
+            and response_to_amo.json()['hint'] != "Cannot decrypt the authorization code"):
+        logger.info("Попытка обновления токена...")
+        response_data["grant_type"] = "refresh_token"
+        response_data["refresh_token"] = response_data.pop("code")
+        response_data["redirect_uri"] = response_data.pop("redirect_uri")
+        response_400 = requests.post(link_access, data=response_data)
+        if response_400.status_code == 401:
+            logger.error(f"Попытка обновления не удалась ошибка - {response_400.json()["title"]}")
+            logger.trace(f"Данные в случае ошибки - {response_data}")
+            return 401
+        else:
+            logger.success("Обновление выполнено!")
+            return refresh_token(env_path, response_400)
     else:
-        logger.info(response.status_code)
-        logger.info(response.json())
-    return False  # Возвращаем False, если функция выполнена с ошибкой
+        logger.error("Токен не валидный, пожалуйста обновите его и повторите попытку!")
+        return response_to_amo.status_code

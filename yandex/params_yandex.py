@@ -4,7 +4,7 @@ import random
 from data.config import Config
 
 config = Config()
-config.load_from_env('.env')
+config.load_from_env('.env.dist')
 yandex_data = config.get('yandex')
 
 body = {

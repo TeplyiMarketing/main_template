@@ -1,9 +1,10 @@
+import json
+
 import pandas as pd
 import requests as requests
 
 from data.parameters import column_campaign_amocrm, column_utm_amocrm
 from logs.logging import logger
-import json
 
 
 # Прописать текст всех ошибок
