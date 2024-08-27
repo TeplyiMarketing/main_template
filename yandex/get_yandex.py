@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Метод для корректной обработки строк в кодировке UTF-8 как в Python 3, так и в Python 2
 import io
+import json
 from time import sleep
 
 import pandas as pd
@@ -8,69 +9,47 @@ import requests
 from loguru import logger
 from requests.exceptions import ConnectionError
 
-from data.parameters import retry_yandex
-
-
-def yandex_to_database(engine, df1):
-    try:
-        df1.to_sql(name='yandex', con=engine, if_exists='append', index=False)
-        logger.warning("Выгрузка yandex прошла с добавлением. Функция yandex_to_db.")
-    except Exception as err:
-        df1.to_sql(name='yandex', con=engine, if_exists='replace', index=False)
-        logger.warning(f"Выгрузка yandex прошла с заменой. Функция yandex_to_db. {err}")
-
 
 # --- Запуск цикла для выполнения запросов ---
 # Если получен HTTP-код 200, то выводится содержание отчета
 # Если получен HTTP-код 201 или 202, выполняются повторные запросы
-def yandex(reports_url, body, headers):
+def yandex(reports_url: str, body: json, headers: dict):
     while True:
         try:
             request = requests.post(reports_url, body, headers=headers)
             if request.status_code == 400:
-                logger.info("Параметры запроса указаны неверно или достигнут лимит отчетов в очереди.")
-                logger.info(f"JSON-код запроса: {body}.")
-                logger.info(f"JSON-код ответа сервера: \n{request.json()}.")
-                break
+                logger.info("Параметры запроса указаны неверно или достигнут лимит отчетов в очереди.\n"
+                            f"JSON-код запроса: {body}.\n"
+                            f"JSON-код ответа сервера: \n{request.json()}.")
+                return 400
             elif request.status_code == 200:
                 logger.warning("Отчёт yandex получен успешно, формирование таблицы. ")
-                return pd.read_csv(io.StringIO(request.text), sep='\t', encoding='utf-8', low_memory=False)
-            elif request.status_code == 201:
-                logger.info("Отчет успешно поставлен в очередь в режиме офлайн.")
-                logger.info(f"Повторная отправка запроса через {retry_yandex} секунд.")
-                sleep(retry_yandex)
-            elif request.status_code == 202:
-                logger.info("Отчет успешно поставлен в очередь в режиме офлайн.")
-                logger.info(f"Повторная отправка запроса через {retry_yandex} секунд.")
-                sleep(retry_yandex)
+                pd.read_csv(io.StringIO(request.text), sep='\t', encoding='utf-8', low_memory=False)
+                return 200
+            elif request.status_code == 201 or request.status_code == 202:
+                logger.info("Отчет успешно поставлен в очередь в режиме офлайн.\n"
+                            "Повторная отправка запроса через 60 секунд.")
+                sleep(60)
             elif request.status_code == 500:
                 logger.info(
-                    "При формировании отчета произошла ошибка. Пожалуйста, попробуйте повторить запрос позднее.")
-                logger.info(f"JSON-код ответа сервера: \n{request.json()}.")
-                break
+                    "При формировании отчета произошла ошибка. Пожалуйста, попробуйте повторить запрос позднее.\n"
+                    f"JSON-код ответа сервера: \n{request.json()}.")
+                return 500
             elif request.status_code == 502:
-                logger.info("Время формирования отчета превысило серверное ограничение.")
-                logger.info(
-                    "Пожалуйста, попробуйте изменить параметры запроса - уменьшить период и количество запрашиваемых "
-                    "данных.")
-                logger.info(f"JSON-код запроса: {body}.")
-                logger.info(f"JSON-код ответа сервера: \n{request.json()}.")
-                break
+                logger.info("Время формирования отчета превысило серверное ограничение.\n"
+                            "Пожалуйста, попробуйте изменить параметры запроса - "
+                            "уменьшить период и количество запрашиваемых данных.\n"
+                            f"JSON-код запроса: {body}.\n"
+                            f"JSON-код ответа сервера: \n{request.json()}.")
+                return 500
             else:
-                logger.info("Произошла непредвиденная ошибка.")
-                logger.info(f"JSON-код запроса: {body}.")
-                logger.info(f"JSON-код ответа сервера: \n{request.json()}.")
+                logger.info("Произошла непредвиденная ошибка.\n"
+                            f"JSON-код запроса: {body}.\n"
+                            f"JSON-код ответа сервера: \n{request.json()}.")
                 break
-
         # Обработка ошибки, если не удалось соединиться с сервером API Директа
-        except ConnectionError:
+        except (ConnectionError, Exception) as error:
             # В данном случае мы рекомендуем повторить запрос позднее
-            logger.error("Произошла ошибка соединения с сервером API. Функция Yandex.")
-            # Принудительный выход из цикла
-            break
-
-        except Exception as err:
-            # В данном случае мы рекомендуем проанализировать действия приложения
-            logger.error(f"Произошла непредвиденная ошибка {err}. Функция Yandex.")
+            logger.error(f"Произошла ошибка {error}. Функция Yandex.")
             # Принудительный выход из цикла
             break
