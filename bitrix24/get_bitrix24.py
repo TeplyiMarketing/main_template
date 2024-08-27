@@ -46,6 +46,11 @@ def split_utm_campaign_and_insert(df, campaign_bitrix24):
     return df
 
 
+def update_date_new_string(dataframe, list_merge_column: list, list_new_column: list):
+    for first_column, second_column in zip(list_merge_column, list_new_column):
+        dataframe[first_column] = dataframe[second_column].fillna(dataframe[first_column])
+
+
 def get_deals_bitrix24(bitrix24, params, columns_bitrix24, replace_dict):
     try:
         deals = bitrix24.get_all('crm.deal.list', params)
@@ -57,8 +62,8 @@ def get_deals_bitrix24(bitrix24, params, columns_bitrix24, replace_dict):
                              how='left', validate="many_to_many")
 
         # Обновляем данные в новых строках
-        merged_df['MOVED_TIME'] = merged_df['CREATED_TIME'].fillna(merged_df['MOVED_TIME'])
-        merged_df['STAGE_ID_x'] = merged_df['STAGE_ID_y'].fillna(merged_df['STAGE_ID_x'])
+        update_date_new_string(dataframe=merged_df, list_merge_column=["MOVED_TIME", "STAGE_ID_x"],
+                               list_new_column=['CREATED_TIME', 'STAGE_ID_y'])
 
         # Переименовываем столбцы
         merged_df.rename(columns={'ID_x': 'ID', 'STAGE_ID_x': 'STAGE_ID'}, inplace=True)

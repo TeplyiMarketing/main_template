@@ -84,7 +84,7 @@ def split_utm_content(df):
     if groupid_found:
         logger.info(f"Обработка {settings.column_utm_amocrm} завершена успешно.")
     else:
-        logger.warning(f"Данные с 'groupid' не найдены в {column_utm_amocrm}.")
+        logger.warning(f"Данные с 'groupid' не найдены в {settings.column_utm_amocrm}.")
     return df
 
 

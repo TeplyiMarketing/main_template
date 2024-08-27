@@ -20,7 +20,6 @@ def refresh_token(response) -> int:
 
 def authorization(link_access: str, response_data: dict) -> int:
     response_to_amo = requests.post(link_access, data=response_data)
-    logger.debug(type(response_to_amo))
     if response_to_amo.status_code == 200:
         return refresh_token(response_to_amo)
 
