@@ -170,30 +170,50 @@ def get_leads(link_leads, data_headers, column_leads=None):
     return dataframe_leads
 
 
-def get_events(link_events, data_headers, replace_dict_events, column_events=None):
-    s = requests.Session()
+def drops_events_columns(dataframe):
+    columns_to_drop_events = [col for col in dataframe.columns if col not in settings.column_events]
+    removed_columns = []  # Список для хранения названий удаленных столбцов
+    for i in columns_to_drop_events:
+        try:
+            dataframe = dataframe.drop(
+                columns=i, axis=1)
+            removed_columns.append(i)  # Добавление названия столбца в список
+            return dataframe
+        except KeyError:
+            logger.warning('Ключ не найден - пропускаем. Функция Events.')
+        except Exception as error:
+            logger.warning(f'Возникло исключение - {error}, функция events.')
+    if removed_columns:
+        logger.info(f'Удалены следующие столбцы: {", ".join(removed_columns)}. Функция events.')
+    else:
+        logger.info('Нет столбцов для удаления. Функция events.')
+
+
+def get_events_columns(session):
     df_events = pd.DataFrame()
     pages_limit = 1
+    try:
+        for i in range(pages_limit, 1000000):
+            pages_limit += 1
+            pages = {'page': i}
+            events = session.get(settings.link_events, headers=settings.data_headers, params=pages)
+            url_events = events.json()['_embedded']['events']
+            df_events = pd.concat([df_events, pd.DataFrame(url_events)], axis=0, ignore_index=True)
+            df_events['value_after.id'] = df_events['value_after'].apply(lambda x: x[0]['lead_status']['id'])
+    except ValueError:
+        logger.warning(
+            f'Events получены, остановка цикла - значений больше нет. Всего получено страниц - {pages_limit}.')
+        return df_events
+    except KeyError:
+        logger.warning('Ключ не найден - пропускаем. Функция Events.')
+    except Exception as error:
+        logger.error(f'Возникла ошибка - {error}, функция events.')
+
+
+def get_events(column_events=None):
+    session = requests.Session()
     message_error = 'Ключ не найден - пропускаем. Функция Events.'
-    while True:
-        try:
-            for i in range(pages_limit, 1000000):
-                pages_limit += 1
-                pages = {'page': i}
-                events = s.get(link_events, headers=data_headers, params=pages)
-                url_events = events.json()['_embedded']['events']
-                df_events = pd.concat([df_events, pd.DataFrame(url_events)], axis=0, ignore_index=True)
-                df_events['value_after.id'] = df_events['value_after'].apply(lambda x: x[0]['lead_status']['id'])
-        except ValueError:
-            logger.warning(
-                f'Events получены, остановка цикла - значений больше нет. Всего получено страниц - {pages_limit}.')
-            break
-        except KeyError:
-            logger.warning(message_error)
-            break
-        except Exception as error:
-            logger.error(f'Возникла ошибка - {error}, функция events.')
-            continue
+    df_events = get_events_columns(session)
     try:
         df_events['created_at'] = pd.to_datetime(df_events['created_at'], unit='s')
         df_events['created_at'] = df_events['created_at'].dt.date
@@ -202,26 +222,12 @@ def get_events(link_events, data_headers, replace_dict_events, column_events=Non
     except Exception as error:
         logger.error(f'Произошла непредвиденная ошибка - {error}, функция events.')
     if column_events:
-        columns_to_drop_events = [col for col in df_events.columns if col not in column_events]
-        removed_columns = []  # Список для хранения названий удаленных столбцов
-        for i in columns_to_drop_events:
-            try:
-                df_events = df_events.drop(
-                    columns=i, axis=1)
-                removed_columns.append(i)  # Добавление названия столбца в список
-            except KeyError:
-                logger.warning(message_error)
-            except Exception as error:
-                logger.warning(f'Возникло исключение - {error}, функция events.')
-        if removed_columns:
-            logger.info(f'Удалены следующие столбцы: {", ".join(removed_columns)}. Функция events.')
-        else:
-            logger.info('Нет столбцов для удаления. Функция events.')
+        drops_events_columns(df_events)
     else:
         logger.warning('Отсутствует columns_events. Функция events.')
     try:
         df_events = df_events.rename(columns={'entity_id': 'id', 'created_at': 'date_event', 'value_after.id': 'stage'})
-        df_events['stage'] = df_events['stage'].replace(replace_dict_events)
+        df_events['stage'] = df_events['stage'].replace(settings.replace_dict_events)
     except KeyError:
         logger.warning(message_error)
     except Exception as error:
